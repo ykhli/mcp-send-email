@@ -24,7 +24,7 @@ Then go to Cursor Settings -> MCP -> Add new MCP server
 
 - Name = [choose your own name]
 - Type = command
-- Command: `node ABSOLUTE+PATH_TO_MCP_SERVER/build/index.js --key=YOUR_RESEND_API_KEY --sender=OPTIONAL_SENDER_EMAIL_ADDRESS`
+- Command: `node ABSOLUTE+PATH_TO_MCP_SERVER/build/index.js --key=YOUR_RESEND_API_KEY --sender=OPTIONAL_SENDER_EMAIL_ADDRESS --reply-to=OPTIONAL_REPLY_TO_EMAIL_ADDRESS_ONE --reply-to=OPTIONAL_REPLY_TO_EMAIL_ADDRESS_TWO`
 
 You can get Resend API key here: https://resend.com/
 
@@ -43,8 +43,9 @@ Same set up as above, and then add the following MCP config
       "command": "node",
       "args": ["ABSOLUTE_PATH_TO_MCP_SERVER/build/index.js"],
       "env": {
-        "RESEND_API_TOKEN": [YOUR_API_TOKEN],
-        "SENDER_EMAIL_ADDRESS": [OPTIONAL_SENDER_EMAIL_ADDRESS]
+        "RESEND_API_KEY": [YOUR_API_KEY],
+        "SENDER_EMAIL_ADDRESS": [OPTIONAL_SENDER_EMAIL_ADDRESS],
+        "REPLY_TO_EMAIL_ADDRESSES": [OPTIONAL_REPLY_TO_EMAIL_ADDRESSES_COMMA_DELIMITED]
       }
     }
   }

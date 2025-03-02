@@ -14,6 +14,17 @@ const apiKey = argv.key || process.env.RESEND_API_KEY;
 // Optional.
 const senderEmailAddress = argv.sender || process.env.SENDER_EMAIL_ADDRESS;
 
+// Get reply to email addresses from command line argument or fall back to environment variable
+let replierEmailAddresses: string[] = [];
+
+if (Array.isArray(argv["reply-to"])) {
+  replierEmailAddresses = argv["reply-to"];
+} else if (typeof argv["reply-to"] === "string") {
+  replierEmailAddresses = [argv["reply-to"]];
+} else if (process.env.REPLY_TO_EMAIL_ADDRESSES) {
+  replierEmailAddresses = process.env.REPLY_TO_EMAIL_ADDRESSES.split(",");
+}
+
 if (!apiKey) {
   console.error(
     "No API key provided. Please set RESEND_API_KEY environment variable or use --key argument"
@@ -36,6 +47,12 @@ server.tool(
     to: z.string().email().describe("Recipient email address"),
     subject: z.string().describe("Email subject line"),
     content: z.string().describe("Plain text email content"),
+    scheduledAt: z
+      .string()
+      .optional()
+      .describe(
+        "Optional parameter to schedule the email. This uses natural language. Examples would be 'tomorrow at 10am' or 'in 2 hours' or 'next day at 9am PST' or 'Friday at 3pm ET'."
+      ),
     // If sender email address is not provided, the tool requires it as an argument
     ...(!senderEmailAddress
       ? {
@@ -48,9 +65,22 @@ server.tool(
             ),
         }
       : {}),
+    ...(replierEmailAddresses.length === 0
+      ? {
+          replyTo: z
+            .string()
+            .email()
+            .array()
+            .optional()
+            .describe(
+              "Optional email addresses for the email readers to reply to. This must be provided explicitly provided by the end user. Do not automatically populate this."
+            ),
+        }
+      : {}),
   },
-  async ({ from, to, subject, content }) => {
+  async ({ from, to, subject, content, replyTo, scheduledAt }) => {
     const fromEmailAddress = from ?? senderEmailAddress;
+    const replyToEmailAddresses = replyTo ?? replierEmailAddresses;
 
     // Type check on from, since "from" is optionally included in the arguments schema
     // This should never happen.
@@ -58,11 +88,21 @@ server.tool(
       throw new Error("from argument must be provided.");
     }
 
+    // Similar type check for "reply-to" email addresses.
+    if (
+      typeof replyToEmailAddresses !== "string" &&
+      !Array.isArray(replyToEmailAddresses)
+    ) {
+      throw new Error("replyTo argument must be provided.");
+    }
+
     const response = await resend.emails.send({
-      from: fromEmailAddress,
       to,
       subject,
+      scheduledAt,
       text: content,
+      from: fromEmailAddress,
+      replyTo: replyToEmailAddresses,
     });
 
     if (response.error) {
